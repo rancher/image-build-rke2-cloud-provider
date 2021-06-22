@@ -35,7 +35,7 @@ image-scan:
 .PHONY: image-manifest
 image-manifest:
 	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create --amend \
-    	$(ORG)/rke2-cloud-provider:$(TAG) \
-    	$(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
-    DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push \
-    	$(ORG)/rke2-cloud-provider:$(TAG)
+		$(ORG)/rke2-cloud-provider:$(TAG) \
+		$(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
+	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push \
+		$(ORG)/rke2-cloud-provider:$(TAG)
