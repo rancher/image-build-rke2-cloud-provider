@@ -1,23 +1,40 @@
 SEVERITIES = HIGH,CRITICAL
 
-ifeq ($(TAG),)
-TAG = dev
+ifeq ($(ARCH),)
+ARCH=$(shell go env GOARCH)
+endif
+
+BUILD_META=-build$(shell date +%Y%m%d)
+ORG ?= rancher
+
+ifneq ($(DRONE_TAG),)
+TAG := $(DRONE_TAG)
+endif
+
+ifeq (,$(filter %$(BUILD_META),$(TAG)))
+$(error TAG needs to end with build metadata: $(BUILD_META))
 endif
 
 .PHONY: all
 all:
-	docker build --build-arg TAG=$(TAG) -t rancher/rke2-cloud-provider:$(TAG) .
+	docker build \
+		--pull \
+		--build-arg TAG=$(TAG) \
+		-t $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) \
+	.
 
 .PHONY: image-push
 image-push:
-	docker push rancher/rke2-cloud-provider:$(TAG) >> /dev/null
+	docker push $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) >> /dev/null
 
-.PHONY: scan
+.PHONY: image-scan
 image-scan:
-	trivy --severity $(SEVERITIES) --no-progress --skip-update --ignore-unfixed rancher/rke2-cloud-provider:$(TAG)
+	trivy --severity $(SEVERITIES) --no-progress --skip-update --ignore-unfixed $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
 
 .PHONY: image-manifest
 image-manifest:
-	docker image inspect rancher/rke2-cloud-provider:$(TAG)
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create rancher/rke2-cloud-provider:$(TAG) \
-		$(shell docker image inspect rancher/rke2-cloud-provider:$(TAG) | jq -r '.[] | .RepoDigests[0]')
+	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create --amend \
+    	$(ORG)/rke2-cloud-provider:$(TAG) \
+    	$(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
+    DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push \
+    	$(ORG)/rke2-cloud-provider:$(TAG)
