@@ -19,6 +19,7 @@ RUN go-assert-static.sh bin/*
 RUN go-assert-boring.sh bin/*
 # install (with strip) to /usr/local/bin
 RUN install -s bin/* /usr/local/bin
+RUN ln -s /usr/local/bin/rke2-cloud-provider /usr/local/bin/cloud-controller-manager
 
 FROM ${UBI_IMAGE} as ubi
 RUN microdnf update -y && \ 
