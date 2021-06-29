@@ -13,7 +13,7 @@ RUN set -x \
     make
 COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
-RUN GO_LDFLAGS="-linkmode=external" \
+RUN GO_LDFLAGS="-linkmode=external -X github.com/rancher/k3s/pkg/version.Program=rke2" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
 RUN go-assert-boring.sh bin/*
