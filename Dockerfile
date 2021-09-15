@@ -1,5 +1,5 @@
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.16.4b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.16.7b7
 
 FROM ${GO_IMAGE} as builder
 ARG TAG=""
