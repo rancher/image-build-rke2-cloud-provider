@@ -40,10 +40,10 @@ replace (
 )
 
 require (
-	github.com/rancher/k3s v1.22.1-rc1.0.20210915173507-086ca8ba6a3b
+	github.com/rancher/k3s v1.22.2-rc2.0.20211015112832-dbc14b899084
 	github.com/spf13/pflag v1.0.5
-	k8s.io/apimachinery v0.22.1
-	k8s.io/cloud-provider v0.22.1
-	k8s.io/component-base v0.22.1
+	k8s.io/apimachinery v0.22.2
+	k8s.io/cloud-provider v0.22.2
+	k8s.io/component-base v0.22.2
 	k8s.io/klog/v2 v2.9.0
 )
