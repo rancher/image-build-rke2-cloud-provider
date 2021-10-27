@@ -21,6 +21,7 @@ all:
 	docker build \
 		--pull \
 		--build-arg TAG=$(TAG) \
+		--build-arg ARCH=$(ARCH) \
 		-t $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) \
 	.
 
