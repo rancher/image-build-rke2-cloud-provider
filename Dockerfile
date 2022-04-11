@@ -1,12 +1,12 @@
-ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.16.10b7
 
 FROM ${GO_IMAGE} as builder
 ARG TAG=""
 ARG ARCH="amd64"
 ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
-RUN set -x \
- && apk --no-cache add \
+RUN set -x && \
+    apk --no-cache add \
     file \
     gcc \
     tar \
@@ -24,8 +24,8 @@ RUN if [ "${ARCH}" != "s390x" ]; then \
 RUN install -s bin/* /usr/local/bin
 RUN ln -s /usr/local/bin/rke2-cloud-provider /usr/local/bin/cloud-controller-manager
 
-FROM ${UBI_IMAGE} as ubi
-RUN microdnf update -y && \ 
-    rm -rf /var/cache/yum
+FROM ${BCI_IMAGE} as bci
+RUN zypper update -y && \
+    zypper clean --all
 
 COPY --from=builder /usr/local/bin /usr/local/bin
