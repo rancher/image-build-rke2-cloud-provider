@@ -1,5 +1,5 @@
 ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.16.10b7
+ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 
 FROM ${GO_IMAGE} as builder
 ARG TAG=""
@@ -14,7 +14,7 @@ RUN set -x \
     make
 COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
-RUN GO_LDFLAGS="-linkmode=external -X github.com/rancher/k3s/pkg/version.Program=rke2" \
+RUN GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
 RUN if [ "${ARCH}" != "s390x" ]; then \

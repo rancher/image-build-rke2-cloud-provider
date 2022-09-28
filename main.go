@@ -19,7 +19,7 @@ import (
 	"math/rand"
 	"time"
 
-	_ "github.com/rancher/k3s/pkg/cloudprovider"
+	_ "github.com/k3s-io/k3s/pkg/cloudprovider"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/wait"
 	cloudprovider "k8s.io/cloud-provider"
