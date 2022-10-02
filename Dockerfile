@@ -1,4 +1,4 @@
-ARG UBI_IMAGE=registry.access.redhat.com/ubi7/ubi-minimal:latest
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base:latest
 ARG GO_IMAGE=rancher/hardened-build-base:v1.19.1b1
 
 FROM ${GO_IMAGE} as builder
@@ -24,8 +24,5 @@ RUN if [ "${ARCH}" != "s390x" ]; then \
 RUN install -s bin/* /usr/local/bin
 RUN ln -s /usr/local/bin/rke2-cloud-provider /usr/local/bin/cloud-controller-manager
 
-FROM ${UBI_IMAGE} as ubi
-RUN microdnf update -y && \ 
-    rm -rf /var/cache/yum
-
+FROM ${BCI_IMAGE} as bci
 COPY --from=builder /usr/local/bin /usr/local/bin
