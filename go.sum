@@ -633,8 +633,8 @@ github.com/k3s-io/continuity v0.0.0-20210309170710-f93269e0d5c1/go.mod h1:EXlVlk
 github.com/k3s-io/cri-dockerd v0.2.4-0.20220826195316-d6cb76f15a6a/go.mod h1:EIOBOIv+NC6cVRQsgLZN97UIDu24/jFWGP9l1qNn1kM=
 github.com/k3s-io/cri-tools v1.25.0-k3s1/go.mod h1:p7J7zyX0/0Tsi19pbZg0hixacpdAHyNNFDCH/brgCjs=
 github.com/k3s-io/helm-controller v0.9.3/go.mod h1:nZP8FH3KZrNNUf5r+SwwiMR63HS6lxdHdpHijgPfF74=
-github.com/k3s-io/k3s v1.25.3-0.20220930151720-027039530d43 h1:cc0nVe2DtviZhgxUJNGHRBahQgwNv73DL1X0/3SShVw=
-github.com/k3s-io/k3s v1.25.3-0.20220930151720-027039530d43/go.mod h1:Qx0Z1cdODAtQZXIfbMDUo3iRzWoOi5NEJzYP9NsjWU4=
+github.com/k3s-io/k3s v1.25.3-0.20221011004039-f25419ca2c8a h1:MM5fTK93LzV1U0RLu7+CYl5sHtj96CVNtXzk4U8OxJM=
+github.com/k3s-io/k3s v1.25.3-0.20221011004039-f25419ca2c8a/go.mod h1:Qx0Z1cdODAtQZXIfbMDUo3iRzWoOi5NEJzYP9NsjWU4=
 github.com/k3s-io/kine v0.9.3/go.mod h1:IiaUJx32GOhR4N5zUevjz3cpU9JT0q9cQzXSZmznHKE=
 github.com/k3s-io/kubernetes v1.25.2-k3s1/go.mod h1:OlhMy4mww2SLr1KtdV1vC014/MwfYlts/C66gtnDkKE=
 github.com/k3s-io/kubernetes/staging/src/k8s.io/api v1.25.2-k3s1 h1:/J6MWo5W0jTSMjcuySJohGoj6A3m2fO9UOdqRahSRDE=

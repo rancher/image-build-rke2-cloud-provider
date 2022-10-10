@@ -41,7 +41,7 @@ replace (
 )
 
 require (
-	github.com/k3s-io/k3s v1.25.3-0.20220930151720-027039530d43
+	github.com/k3s-io/k3s v1.25.3-0.20221011004039-f25419ca2c8a
 	github.com/spf13/pflag v1.0.5
 	k8s.io/apimachinery v0.25.2
 	k8s.io/cloud-provider v0.25.2
