@@ -9,7 +9,7 @@ platform:
 steps:
 - name: build
   pull: always
-  image: rancher/hardened-build-base:v1.19.7b1
+  image: rancher/hardened-build-base:v1.20.4b11
   commands:
   - make DRONE_TAG=${DRONE_TAG}
   volumes:
@@ -17,7 +17,7 @@ steps:
     path: /var/run/docker.sock
 
 - name: publish
-  image: rancher/hardened-build-base:v1.19.7b1
+  image: rancher/hardened-build-base:v1.20.4b11
   commands:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - make DRONE_TAG=${DRONE_TAG} image-push
@@ -34,7 +34,54 @@ steps:
     - tag
 
 - name: scan
-  image: rancher/hardened-build-base:v1.19.7b1
+  image: rancher/hardened-build-base:v1.20.4b11
+  commands:
+  - make DRONE_TAG=${DRONE_TAG} image-scan
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
+---
+kind: pipeline
+name: linux-arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  pull: always
+  image: rancher/hardened-build-base:v1.20.4b11
+  commands:
+  - make DRONE_TAG=${DRONE_TAG}
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+
+- name: publish
+  image: rancher/hardened-build-base:v1.20.4b11
+  commands:
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - make DRONE_TAG=${DRONE_TAG} image-push
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USERNAME:
+      from_secret: docker_username
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+  when:
+    event:
+    - tag
+
+- name: scan
+  image: rancher/hardened-build-base:v1.20.4b11
   commands:
   - make DRONE_TAG=${DRONE_TAG} image-scan
   volumes:
@@ -60,7 +107,7 @@ node:
 steps:
 - name: build
   pull: always
-  image: rancher/hardened-build-base:v1.19.7b1
+  image: rancher/hardened-build-base:v1.20.4b11
   failure: ignore
   commands:
   - make DRONE_TAG=${DRONE_TAG}
@@ -69,7 +116,7 @@ steps:
     path: /var/run/docker.sock
 
 - name: publish
-  image: rancher/hardened-build-base:v1.19.7b1
+  image: rancher/hardened-build-base:v1.20.4b11
   failure: ignore
   commands:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
@@ -113,6 +160,7 @@ steps:
         - tag
 depends_on:
   - linux-amd64
+  - linux-arm64
   - linux-s390x
 ...
 
