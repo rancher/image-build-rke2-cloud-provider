@@ -17,7 +17,7 @@ WORKDIR $GOPATH/src/${PKG}
 RUN GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
-RUN if [ "${ARCH}" = "amd64" ]; \
+RUN if [ "${ARCH}" = "amd64" ]; then \
 	    go-assert-boring.sh bin/*; \
     fi
 # install (with strip) to /usr/local/bin
