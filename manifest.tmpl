@@ -6,6 +6,11 @@ manifests:
       architecture: amd64
       os: linux
   -
+    image: rancher/rke2-cloud-provider:{{build.tag}}-arm64
+    platform:
+      architecture: arm64
+      os: linux
+  -
     image: rancher/rke2-cloud-provider:{{build.tag}}-s390x
     platform:
       architecture: s390x

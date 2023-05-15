@@ -1,12 +1,12 @@
-ARG BCI_IMAGE=registry.suse.com/bci/bci-base:latest
-ARG GO_IMAGE=rancher/hardened-build-base:v1.19.7b1
+ARG BCI_IMAGE=registry.suse.com/bci/bci-base
+ARG GO_IMAGE=rancher/hardened-build-base:v1.20.4b11
 
 FROM ${GO_IMAGE} as builder
 ARG TAG=""
 ARG ARCH="amd64"
 ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
-RUN set -x \
- && apk --no-cache add \
+RUN set -x && \
+    apk --no-cache add \
     file \
     gcc \
     tar \
@@ -17,8 +17,8 @@ WORKDIR $GOPATH/src/${PKG}
 RUN GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
-RUN if [ "${ARCH}" != "s390x" ]; then \
-	go-assert-boring.sh bin/*; \
+RUN if [ "${ARCH}" = "amd64" ]; then \
+	    go-assert-boring.sh bin/*; \
     fi
 # install (with strip) to /usr/local/bin
 RUN install -s bin/* /usr/local/bin
