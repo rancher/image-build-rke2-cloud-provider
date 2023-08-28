@@ -37,7 +37,7 @@ image-push:
 
 .PHONY: image-scan
 image-scan:
-	trivy --severity $(SEVERITIES) --no-progress --skip-update --ignore-unfixed $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
+	trivy image --severity $(SEVERITIES) --no-progress --skip-db-update --ignore-unfixed $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
 
 .PHONY: image-manifest
 image-manifest:
