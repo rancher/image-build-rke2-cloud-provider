@@ -25,6 +25,7 @@ import (
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/cloud-provider/app"
 	"k8s.io/cloud-provider/app/config"
+	"k8s.io/cloud-provider/names"
 	"k8s.io/cloud-provider/options"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
@@ -41,8 +42,15 @@ func main() {
 		klog.Fatalf("unable to initialize command options: %v", err)
 	}
 
+	controllerAliases := names.CCMControllerAliases()
 	fss := cliflag.NamedFlagSets{}
-	command := app.NewCloudControllerManagerCommand(ccmOptions, cloudInitializer, app.DefaultInitFuncConstructors, fss, wait.NeverStop)
+	command := app.NewCloudControllerManagerCommand(
+		ccmOptions,
+		cloudInitializer,
+		app.DefaultInitFuncConstructors,
+		controllerAliases,
+		fss,
+		wait.NeverStop)
 
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
 	logs.InitLogs()
