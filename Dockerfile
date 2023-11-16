@@ -1,4 +1,4 @@
-ARG BCI_IMAGE=registry.suse.com/bci/bci-micro
+#ARG BCI_IMAGE=registry.suse.com/bci/bci-micro
 ARG GO_IMAGE=rancher/hardened-build-base:v1.20.7b3
 
 FROM ${GO_IMAGE} as builder
@@ -24,5 +24,6 @@ RUN if [ "${ARCH}" = "amd64" ]; then \
 RUN install -s bin/* /usr/local/bin
 RUN ln -s /usr/local/bin/rke2-cloud-provider /usr/local/bin/cloud-controller-manager
 
-FROM ${BCI_IMAGE} as bci
+#FROM ${BCI_IMAGE} as bci
+FROM scratch
 COPY --from=builder /usr/local/bin /usr/local/bin
