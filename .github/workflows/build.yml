@@ -25,13 +25,13 @@ jobs:
       with:
         context: .
         push: false
-        tags: rancher/rancher/rke2-cloud-provider:${{ env.TAG }}-amd64
+        tags: rancher/rke2-cloud-provider:${{ env.TAG }}-amd64
         file: Dockerfile
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@0.18.0
       with:
-        image-ref: rancher/rancher/rke2-cloud-provider:${{ env.TAG }}-amd64
+        image-ref: rancher/rke2-cloud-provider:${{ env.TAG }}-amd64
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
@@ -64,7 +64,7 @@ jobs:
       with:
         context: .
         push: false
-        tags: rancher/rancher/rke2-cloud-provider:${{ env.TAG }}-arm64
+        tags: rancher/rke2-cloud-provider:${{ env.TAG }}-arm64
         file: Dockerfile
         outputs: type=docker
         platforms: linux/arm64

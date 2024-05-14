@@ -39,6 +39,6 @@ jobs:
       with:
         context: .
         push: true
-        tags: rancher/rancher/rke2-cloud-provider:${{ github.event.release.tag_name }}
+        tags: rancher/rke2-cloud-provider:${{ github.event.release.tag_name }}
         file: Dockerfile
         platforms: linux/amd64, linux/arm64
