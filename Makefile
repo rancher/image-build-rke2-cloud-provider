@@ -14,18 +14,16 @@ BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
 TAG ?= dev$(BUILD_META)
 
-ifneq ($(DRONE_TAG),)
-	TAG := $(DRONE_TAG)
-endif
-
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
-	$(error TAG needs to end with build metadata: $(BUILD_META))
+$(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
 
-.PHONY: all
-all:
-	docker build \
+.PHONY: image-build
+image-build:
+	docker buildx build \
 		--pull \
+		--platform=$(ARCH) \
+		--load \
 		--build-arg TAG=$(TAG) \
 		--build-arg ARCH=$(ARCH) \
 		-t $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) \
@@ -46,3 +44,13 @@ image-manifest:
 		$(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
 	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push \
 		$(ORG)/rke2-cloud-provider:$(TAG)
+
+PHONY: log
+log:
+	@echo "ARCH=$(ARCH)"
+	@echo "TAG=$(TAG)"
+	@echo "ORG=$(ORG)"
+	@echo "PKG=$(PKG)"
+	@echo "SRC=$(SRC)"
+	@echo "BUILD_META=$(BUILD_META)"
+	@echo "UNAME_M=$(UNAME_M)"
