@@ -4,6 +4,10 @@ on:
 
 permissions:
   contents: read  
+  id-token: write
+
+env:
+  GITHUB_ACTION_TAG: ${{ github.ref_name }}
 
 jobs:
   push-multiarch:
@@ -14,6 +18,11 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -42,3 +51,5 @@ jobs:
         tags: rancher/rke2-cloud-provider:${{ github.event.release.tag_name }}
         file: Dockerfile
         platforms: linux/amd64, linux/arm64
+        build-args: |
+          TAG=${{ env.TAG }}

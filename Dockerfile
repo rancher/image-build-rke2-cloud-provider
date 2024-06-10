@@ -1,5 +1,4 @@
 ARG GO_IMAGE=rancher/hardened-build-base:v1.21.10b1
-ARG ARCH="amd64"
 
 # Image that provides cross compilation tooling.
 FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.3.0 as xx
@@ -28,12 +27,12 @@ COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
 RUN go mod download
 # cross-compilation setup
-ARG TARGETPLATFORM
+ARG TARGETARCH
 RUN xx-go --wrap && \
     GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
-RUN if [ "${ARCH}" = "amd64" ]; then \
+RUN if [ "${TARGETARCH}" = "amd64" ]; then \
 	    go-assert-boring.sh bin/*; \
     fi
 RUN install bin/* /usr/local/bin

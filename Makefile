@@ -12,7 +12,11 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
-TAG ?= dev$(BUILD_META)
+TAG ?= ${GITHUB_ACTION_TAG}
+
+ifeq ($(TAG),)
+TAG := dev$(BUILD_META)
+endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
