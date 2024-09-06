@@ -1,4 +1,4 @@
-ARG GO_IMAGE=rancher/hardened-build-base:v1.21.11b3
+ARG GO_IMAGE=rancher/hardened-build-base:v1.22.6b1
 
 # Image that provides cross compilation tooling.
 FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.3.0 as xx
@@ -8,6 +8,7 @@ FROM --platform=$BUILDPLATFORM ${GO_IMAGE} as base-builder
 COPY --from=xx / /
 RUN set -x && \
     apk --no-cache add \
+    jq \
     file \
     gcc \
     tar \
@@ -25,11 +26,13 @@ ARG TAG=""
 ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
 COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
+RUN go install github.com/davidrjonas/semver-cli@1.1.1
+RUN ./scripts/modsync.sh ${TAG}
 RUN go mod download
 # cross-compilation setup
 ARG TARGETARCH
 RUN xx-go --wrap && \
-    GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2" \
+    GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2 -X github.com/k3s-io/k3s/pkg/version.Version=$(go list -f '{{.Version}}' -m github.com/k3s-io/k3s)" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
@@ -43,7 +46,6 @@ COPY --from=builder /usr/local/bin/rke2-cloud-provider /usr/local/bin/rke2-cloud
 RUN strip /usr/local/bin/rke2-cloud-provider
 RUN ln -s /usr/local/bin/rke2-cloud-provider /usr/local/bin/cloud-controller-manager
 
-
-
 FROM scratch
 COPY --from=strip_binary /usr/local/bin /usr/local/bin
+CMD ["/usr/local/bin/cloud-controller-manager"]
