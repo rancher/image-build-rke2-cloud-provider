@@ -15,7 +15,7 @@ ORG ?= rancher
 TAG ?= ${GITHUB_ACTION_TAG}
 
 ifeq ($(TAG),)
-TAG := dev$(BUILD_META)
+TAG := v1.29.3$(BUILD_META)
 endif
 
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
