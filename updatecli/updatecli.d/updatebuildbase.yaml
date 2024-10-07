@@ -1,46 +1,5 @@
 ---
-name: "Update build base version" 
-
-sources:
-  gomod:
-    name: Get latest Golang version based on go.mod
-    kind: file
-    spec:
-      file: go.mod
-      matchpattern: 'go ([0-9]+\.[0-9]+)'
-    transformers:
-      - trimprefix: "go "
-
-  buildbase:
-   name: Get build base version
-   kind: githubrelease
-   dependson:
-     - "gomod"
-   spec:
-     owner: rancher
-     repository: image-build-base
-     token: '{{ requiredEnv .github.token }}'
-     typefilter:
-       release: true
-       draft: false
-       prerelease: false
-     versionfilter:
-       kind: regex
-       pattern: '{{ source "gomod"}}\.\S+'
-
-targets:
-  dockerfile:
-    name: "Bump to latest build base version in Dockerfile"
-    kind: dockerfile
-    scmid: default
-    sourceid: buildbase
-    spec:
-      file: Dockerfile
-      instruction:
-        keyword: ARG
-        matcher: "GO_IMAGE"
-    transformers:
-      - addprefix: "rancher/hardened-build-base:"
+name: "Update build base version"
 
 scms:
   default:
@@ -53,15 +12,72 @@ scms:
       owner: '{{ .github.owner }}'
       repository: '{{ .github.repository }}'
       branch: '{{ .github.branch }}'
-      
-actions:
-    default:
-        title: 'Bump build base version to {{ source "buildbase" }}'
-        kind: github/pullrequest
+
+sources:
+  buildbase:
+   name: Get image-build-base version
+   kind: githubrelease
+   spec:
+     owner: rancher
+     repository: image-build-base
+     token: '{{ requiredEnv .github.token }}'
+     typefilter:
+       release: true
+       latest: true
+       draft: false
+       prerelease: false
+
+targets:
+  dockerfile:
+    name: Bump to latest image-build-base version in Dockerfile
+    kind: dockerfile
+    scmid: default
+    sourceid: buildbase
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: ARG
+        matcher: "GO_IMAGE"
+    transformers:
+      - addprefix: "rancher/hardened-build-base:"
+
+  goversion:
+    name: Bump Golang version to minor version of image-build-base
+    kind: golang/gomod
+    scmid: default
+    sourceid: buildbase
+    transformers:
+      - find: 'v?\d+\.\d+\.\d+'
+
+  goModTidy:
+    dependson:
+      - goversion
+    disablesourceinput: true
+    dependsonchange: true
+    kind: shell
+    scmid: default
+    name: Run `go mod tidy`
+    spec:
+      changedif:
+        kind: file/checksum
         spec:
-            automerge: false
-            labels:
-                - chore
-                - skip-changelog
-                - status/auto-created
-        scmid: default
+          files:
+            - go.mod
+            - go.sum
+      command: go mod tidy
+      environments:
+        - name: HOME
+        - name: PATH
+
+actions:
+  default:
+    title: Bump image-build-base and go.mod version to {{ source "buildbase" }}
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      automerge: false
+      labels:
+        - chore
+        - skip-changelog
+        - status/auto-created
+
