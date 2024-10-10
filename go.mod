@@ -1,6 +1,6 @@
 module github.com/rancher/image-build-rke2-cloud-provider
 
-go 1.22.4
+go 1.22.7
 
 replace (
 	github.com/Mirantis/cri-dockerd => github.com/k3s-io/cri-dockerd v0.3.12-k3s1
