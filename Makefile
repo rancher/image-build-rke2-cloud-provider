@@ -10,9 +10,21 @@ else
 	ARCH=$(UNAME_M)
 endif
 
+ifndef TARGET_PLATFORMS
+	ifeq ($(UNAME_M), x86_64)
+		TARGET_PLATFORMS:=linux/amd64
+	else ifeq ($(UNAME_M), aarch64)
+		TARGET_PLATFORMS:=linux/arm64
+	else 
+		TARGET_PLATFORMS:=linux/$(UNAME_M)
+	endif
+endif
+
 BUILD_META=-build$(shell date +%Y%m%d)
 ORG ?= rancher
 TAG ?= ${GITHUB_ACTION_TAG}
+
+IMAGE ?= $(ORG)/rke2-cloud-provider:$(TAG)
 
 ifeq ($(TAG),)
 TAG := v1.29.9$(BUILD_META)
@@ -30,12 +42,26 @@ image-build:
 		--load \
 		--build-arg TAG=$(TAG) \
 		--build-arg ARCH=$(ARCH) \
-		-t $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) \
+		-t $(IMAGE)-$(ARCH) \
 	.
 
 .PHONY: image-push
 image-push:
-	docker push $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH) >> /dev/null
+	docker push $(IMAGE)-$(ARCH) >> /dev/null
+
+.PHONY: push-image
+push-image:
+	docker buildx build \
+		$(IID_FILE_FLAG) \
+		--sbom=true \
+		--attest type=provenance,mode=max \
+		--platform=$(TARGET_PLATFORMS) \
+		--build-arg TAG=$(TAG) \
+		--build-arg ARCH=$(ARCH) \
+		--tag $(IMAGE) \
+		--tag $(IMAGE)-$(ARCH) \
+		--push \
+		.
 
 .PHONY: image-scan
 image-scan:
