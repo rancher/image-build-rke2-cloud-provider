@@ -28,6 +28,7 @@ ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
 COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
 RUN go install github.com/davidrjonas/semver-cli@1.1.1
+ENV GONOSUMDB=github.com/k3s-io/k3s GONOPROXY=github.com/k3s-io/k3s
 RUN ./scripts/modsync.sh ${TAG}
 RUN go mod download
 # cross-compilation setup
