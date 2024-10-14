@@ -8,6 +8,7 @@ FROM --platform=$BUILDPLATFORM ${GO_IMAGE} as base-builder
 COPY --from=xx / /
 RUN set -x && \
     apk --no-cache add \
+    gawk \
     jq \
     file \
     gcc \
