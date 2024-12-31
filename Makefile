@@ -32,7 +32,7 @@ $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
 
 REPO ?= rancher
-IMAGE ?= $(REPO)/hardened-kubernetes:$(TAG)
+IMAGE ?= $(REPO)/rke2-cloud-provider:$(TAG)
 
 
 .PHONY: image-build
