@@ -21,10 +21,7 @@ ifndef TARGET_PLATFORMS
 endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
-ORG ?= rancher
 TAG ?= ${GITHUB_ACTION_TAG}
-
-IMAGE ?= $(ORG)/rke2-cloud-provider:$(TAG)
 
 ifeq ($(TAG),)
 TAG := v1.29.9$(BUILD_META)
@@ -33,6 +30,10 @@ endif
 ifeq (,$(filter %$(BUILD_META),$(TAG)))
 $(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
 endif
+
+REPO ?= rancher
+IMAGE ?= $(REPO)/hardened-kubernetes:$(TAG)
+
 
 .PHONY: image-build
 image-build:
@@ -65,21 +66,14 @@ push-image:
 
 .PHONY: image-scan
 image-scan:
-	trivy image --severity $(SEVERITIES) --no-progress --skip-db-update --ignore-unfixed $(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
-
-.PHONY: image-manifest
-image-manifest:
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create --amend \
-		$(ORG)/rke2-cloud-provider:$(TAG) \
-		$(ORG)/rke2-cloud-provider:$(TAG)-$(ARCH)
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push \
-		$(ORG)/rke2-cloud-provider:$(TAG)
+	trivy image --severity $(SEVERITIES) --no-progress --skip-db-update --ignore-unfixed $(IMAGE)
 
 PHONY: log
 log:
 	@echo "ARCH=$(ARCH)"
 	@echo "TAG=$(TAG)"
-	@echo "ORG=$(ORG)"
+	@echo "REPO=$(REPO)"
+	@echo "IMAGE=$(IMAGE)"
 	@echo "PKG=$(PKG)"
 	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
