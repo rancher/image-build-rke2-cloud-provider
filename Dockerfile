@@ -34,7 +34,8 @@ RUN go mod download
 # cross-compilation setup
 ARG TARGETARCH
 RUN xx-go --wrap && \
-    GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2 -X github.com/k3s-io/k3s/pkg/version.Version=$(go list -f '{{.Version}}' -m github.com/k3s-io/k3s)" \
+    GIT_COMMIT=$(git rev-parse --short HEAD) \
+    GO_LDFLAGS="-linkmode=external -X github.com/k3s-io/k3s/pkg/version.Program=rke2 -X ${PKG}/pkg/version.GitCommit=${GIT_COMMIT} -X github.com/k3s-io/k3s/pkg/version.Version=$(go list -f '{{.Version}}' -m github.com/k3s-io/k3s)" \
     go-build-static.sh -o bin/rke2-cloud-provider
 RUN go-assert-static.sh bin/*
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
