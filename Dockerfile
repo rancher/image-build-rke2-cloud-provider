@@ -19,8 +19,7 @@ RUN set -x && \
     lld
 ARG TARGETPLATFORM
 # setup required packages
-RUN set -x && \
-    xx-apk --no-cache add musl-dev gcc
+RUN set -x && xx-apk --no-cache add musl-dev gcc
 
 FROM base-builder as builder
 ARG TAG=""
