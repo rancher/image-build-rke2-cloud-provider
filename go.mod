@@ -1,12 +1,13 @@
 module github.com/rancher/image-build-rke2-cloud-provider
 
-go 1.24.4
+go 1.23.10
 
 replace (
 	github.com/Mirantis/cri-dockerd => github.com/k3s-io/cri-dockerd v0.3.12-k3s1
 	github.com/containerd/containerd => github.com/k3s-io/containerd v1.7.15-k3s1
 	github.com/emicklei/go-restful/v3 => github.com/emicklei/go-restful/v3 v3.9.0
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.4
+	github.com/google/cel-go => github.com/google/cel-go v0.17.8
 	github.com/googleapis/gax-go/v2 => github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common => github.com/prometheus/common v0.45.0
