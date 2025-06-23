@@ -1,7 +1,7 @@
 ARG GO_IMAGE=rancher/hardened-build-base:v1.24.4b1
 
 # Image that provides cross compilation tooling.
-FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.5.0 as xx
+FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.6.1 as xx
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} as base-builder
 # copy xx scripts to your build stage
