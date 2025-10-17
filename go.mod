@@ -7,6 +7,8 @@ replace (
 	github.com/containerd/containerd => github.com/k3s-io/containerd v1.7.15-k3s1
 	github.com/emicklei/go-restful/v3 => github.com/emicklei/go-restful/v3 v3.9.0
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.4
+	github.com/google/cel-go => github.com/google/cel-go v0.17.8
+	github.com/google/gnostic-models => github.com/google/gnostic-models v0.6.9
 	github.com/googleapis/gax-go/v2 => github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common => github.com/prometheus/common v0.45.0
@@ -135,7 +137,7 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	google.golang.org/grpc v1.65.0 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
