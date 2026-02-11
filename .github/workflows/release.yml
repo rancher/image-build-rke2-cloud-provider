@@ -19,6 +19,25 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v6
 
+    - name: Remove Unnecessary Tools
+      run: |
+        sudo rm -rf \
+          /home/linuxbrew \
+          /home/packer \
+          /opt/az \
+          /opt/microsoft \
+          /usr/lib/firefox \
+          /usr/lib/google-cloud-sdk \
+          /usr/local/julia* \
+          /usr/local/share/boost \
+          /usr/local/share/chromium \
+          /usr/local/share/powershell \
+          /usr/share/az* \
+          /usr/share/dotnet \
+          /usr/share/miniconda \
+          /usr/share/swift
+        df -khl
+
     - name: "Read secrets"
       uses: rancher-eio/read-vault-secrets@main
       with:
