@@ -33,6 +33,11 @@ while read OLDPATH NEWPATH VERSION; do
   if [ -n "${K3S_PATH}" ]; then
     NEWPATH="${K3S_PATH}"
   fi
+  case "${OLDPATH}" in
+  "github.com/google/gnostic-models" | "github.com/google/cel-go" )
+    continue
+    ;;
+  esac
   echo "Checking for updates to ${OLDPATH} ${VERSION} -> ${REPLACEMENT}"
   if [ -n "${REPLACEMENT}" ] && [ "${REPLACEMENT}" != "null" ] && grep -vqF github.com/k3s-io/k3s <<<${NEWPATH} && semver-cli greater ${REPLACEMENT} ${VERSION} ; then
     (set -x; go mod edit --replace="${OLDPATH}=${NEWPATH}@${REPLACEMENT}")
