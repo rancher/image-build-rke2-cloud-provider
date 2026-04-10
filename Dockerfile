@@ -1,9 +1,9 @@
 ARG GO_IMAGE=rancher/hardened-build-base:v1.25.9b1
 
 # Image that provides cross compilation tooling.
-FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.6.1 as xx
+FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.6.1 AS xx
 
-FROM --platform=$BUILDPLATFORM ${GO_IMAGE} as base-builder
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS base-builder
 # copy xx scripts to your build stage
 COPY --from=xx / /
 RUN set -x && \
@@ -22,7 +22,7 @@ ARG TARGETPLATFORM
 RUN set -x && \
     xx-apk --no-cache add musl-dev gcc
 
-FROM base-builder as builder
+FROM base-builder AS builder
 ARG TAG=""
 ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
 COPY . /$GOPATH/src/${PKG}
@@ -42,7 +42,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ]; then \
     fi
 RUN install bin/* /usr/local/bin
 
-FROM ${GO_IMAGE} as strip_binary
+FROM ${GO_IMAGE} AS strip_binary
 #strip needs to run on TARGETPLATFORM, not BUILDPLATFORM
 COPY --from=builder /usr/local/bin/rke2-cloud-provider /usr/local/bin/rke2-cloud-provider
 RUN strip /usr/local/bin/rke2-cloud-provider
