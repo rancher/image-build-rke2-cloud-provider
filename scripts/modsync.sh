@@ -28,6 +28,11 @@ done <<< $(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r '.Replace[] | 
 
 # update replacements
 while read OLDPATH NEWPATH VERSION; do
+  # don't update local replacements
+  if [[ "${NEWPATH}" == ./* ]]; then
+    echo "Not updating local replacement of ${OLDPATH}"
+    continue
+  fi
   REPLACEMENT=$(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r --arg OLDPATH "${OLDPATH}" '.Replace[] | select(.Old.Path==$OLDPATH) | .New.Version')
   K3S_PATH=$(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r --arg OLDPATH "${OLDPATH}" '.Replace[] | select(.Old.Path==$OLDPATH) | .New.Path')
   if [ -n "${K3S_PATH}" ]; then
