@@ -30,6 +30,7 @@ WORKDIR $GOPATH/src/${PKG}
 RUN go install github.com/davidrjonas/semver-cli@01c0227aa85e
 ENV GONOSUMDB=github.com/k3s-io/k3s GONOPROXY=github.com/k3s-io/k3s
 RUN ./scripts/modsync.sh ${TAG}
+RUN go-mod-overrides.sh ./go-mod-overrides
 RUN go mod download
 # cross-compilation setup
 ARG TARGETARCH
