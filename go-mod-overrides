@@ -1,6 +1,6 @@
-# golang.org/x/net: CVE-2026-33814 (net/http2 DoS), CVE-2026-39821 (x/net/idna punycode).
-# Drop once upstream requires golang.org/x/net >= v0.55.0.
--replace golang.org/x/net=golang.org/x/net@v0.55.0
+# golang.org/x/net: CVE-2026-33814 (net/http2 DoS), CVE-2026-39821 (x/net/idna punycode), CVE-2026-46600 (x/net/dns/dnsmessage panic parsing invalid SVCB or HTTPS RR).
+# Drop once upstream requires golang.org/x/net >= v0.56.0.
+-replace golang.org/x/net=golang.org/x/net@v0.56.0
 
 # google.golang.org/grpc: GHSA-hrxh-6v49-42gf (xDS RBAC auth bypass, HTTP/2 Rapid Reset DoS), CVE-2026-84304 (data race on stream context).
 # Drop once upstream requires google.golang.org/grpc >= v1.83.1.
