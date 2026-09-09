@@ -9,3 +9,7 @@
 # golang.org/x/crypto: CVE-2026-56855, CVE-2026-78662 (ssh channel DoS) — golang.org/x/crypto/ssh.
 # Drop once upstream requires golang.org/x/crypto >= v0.56.0.
 -replace golang.org/x/crypto=golang.org/x/crypto@v0.56.0
+
+# github.com/google/cel-go: GHSA-gcjh-h69q-9w9g (JSON private fields exposed via NativeTypes/ParseStructTag).
+# Drop once upstream requires github.com/google/cel-go >= v0.29.0.
+-replace github.com/google/cel-go=github.com/google/cel-go@v0.29.0
