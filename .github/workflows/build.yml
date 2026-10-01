@@ -40,7 +40,7 @@ jobs:
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
     - name: Build container image
-      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
       with:
         context: .
         push: false
@@ -59,7 +59,7 @@ jobs:
         format: 'sarif'
         output: 'trivy-results.sarif'
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
@@ -71,17 +71,17 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+      uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
     - name: Set the TAG value
       id: get-TAG
       run: |
         echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
     - name: Build container image
-      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
       with:
         context: .
         push: false
