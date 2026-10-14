@@ -1,1 +1,7 @@
 # We should inject overrides directly into the go.mod file using the `replace` directive.
+
+# golang.org/x/net: CVE-2026-78669 (HIGH, net/http2 DoS via excessive HTTP/2 SETTINGS frames),
+# CVE-2026-78663 / CVE-2026-97032 (MEDIUM, http2 flow-control / HPACK DoS),
+# CVE-2026-78659 / CVE-2026-78660 (http2 trailer / malformed framing handling); bump to v0.60.0.
+# Drop once upstream requires golang.org/x/net >= v0.60.0.
+-replace golang.org/x/net=golang.org/x/net@v0.60.0
