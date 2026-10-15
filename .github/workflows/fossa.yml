@@ -25,10 +25,26 @@ jobs:
         secrets: |
           secret/data/github/org/rancher/fossa/push token | FOSSA_API_KEY_PUSH_ONLY
 
+    - name: Generate pinned dependency graph
+      id: dependencies
+      run: |
+        mkdir -p .cache/modsync
+        GO_IMAGE=$(sed -n 's/^ARG GO_IMAGE=//p' Dockerfile)
+        K3S_MINOR=$(jq -er 'keys | sort_by(sub("^v"; "") | split(".") | map(tonumber)) | last | sub("^v"; "")' k3s-sources.json)
+        WORKSPACE=$(docker run --rm \
+          --volume "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+          --workdir "${GITHUB_WORKSPACE}" \
+          --env K3S_MINOR="${K3S_MINOR}" \
+          --env GONOSUMDB=github.com/k3s-io/k3s \
+          --env GONOPROXY=github.com/k3s-io/k3s \
+          "${GO_IMAGE}" sh -c 'apk --no-cache add jq make >/dev/null && make -s modsync K3S_MINOR="${K3S_MINOR}"')
+        echo "workspace=${WORKSPACE}" >> "${GITHUB_OUTPUT}"
+
     - name: FOSSA scan
       uses: fossas/fossa-action@29693cc50323968e039056be419b32989fc5880c # v2.0.0
       with:
         api-key: ${{ env.FOSSA_API_KEY_PUSH_ONLY }}
+        working-directory: ${{ steps.dependencies.outputs.workspace }}
         # Only runs the scan and do not provide/returns any results back to the
         # pipeline.
         run-tests: false

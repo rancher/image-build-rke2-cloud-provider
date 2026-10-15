@@ -1,51 +1,86 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-K3S_REPO="${K3S_REPO:-k3s-io/k3s}"
-
-# Match a golang pesudo-version string, for example: v1.31.2-0.20241011135109-46cfd2cf55d3
-# When a pseudo-version is matched only the commit hash is used, otherwise use the corresponding tag with +k3s1 appended
-TAG_OR_COMMIT=$(echo "$1" | awk 'match($0, /\.[[:digit:]]{14}-([[:alnum:]]{12})/, capture) {print capture[1]}')
-if [[ -z "${TAG_OR_COMMIT}" ]]; then
-  TAG_OR_COMMIT=${1/-build*/+k3s1}
-fi
-echo "Updating go.mod replacements from ${K3S_REPO} at tag ${TAG_OR_COMMIT}"
-
-URL="https://raw.githubusercontent.com/${K3S_REPO}/${TAG_OR_COMMIT}/go.mod"
-echo "Using go.mod from ${URL}"
-K3S_GO_MOD=$(curl -qsfL "${URL}")
-
-if [[ -z "${K3S_GO_MOD}" ]]; then
-  echo "Failed to get go.mod from ${URL}"
+fail() {
+  echo "modsync: $*" >&2
   exit 1
+}
+
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+for tool in go jq tar; do
+  command -v "${tool}" >/dev/null || fail "required tool not found: ${tool}; use the hardened build base"
+done
+
+SELECTION=$(bash "${ROOT}/scripts/source.sh" "${1:-}")
+read -r MINOR COMMIT <<<"${SELECTION}"
+[[ "${2:-${COMMIT}}" == "${COMMIT}" ]] ||
+  fail "K3S_COMMIT does not match the ${MINOR} entry in k3s-sources.json"
+
+export GOWORK=off
+WORKSPACE_ROOT="${ROOT}/.cache/modsync"
+mkdir -p "${WORKSPACE_ROOT}" ||
+  fail "cannot create ${WORKSPACE_ROOT}; if it contains Docker-generated files, run 'sudo make clean' first"
+WORKSPACE=$(mktemp -d "${WORKSPACE_ROOT}/${MINOR}.XXXXXX")
+tar -C "${ROOT}" \
+  --exclude='./.git' --exclude='./.cache' --exclude='./bin' --exclude='./dist' \
+  -cf - . | tar -C "${WORKSPACE}" -xf -
+cd "${WORKSPACE}"
+
+echo "modsync: resolving ${MINOR} from k3s commit ${COMMIT}" >&2
+go mod download -json "github.com/k3s-io/k3s@${COMMIT}" > k3s-module.json
+VERSION=$(jq -er '.Version' k3s-module.json)
+UPSTREAM_MOD=$(jq -er '.GoMod' k3s-module.json)
+go mod edit -json "${UPSTREAM_MOD}" > k3s-go-mod.json
+BOOTSTRAP_GO=$(go mod edit -json "${ROOT}/go.mod" | jq -er '.Go')
+
+jq -e --arg minor "${MINOR}" '
+  any(.Replace[];
+    .Old.Path == "k8s.io/kubernetes" and
+    (.New.Version | startswith($minor + ".") or startswith($minor + "-")))
+' k3s-go-mod.json >/dev/null ||
+  fail "k3s ${COMMIT} does not replace Kubernetes with ${MINOR}"
+jq -e '
+  all(.Replace[];
+    .Old.Path == "github.com/k3s-io/kine" or
+    (.New.Version != null and .New.Version != ""))
+' k3s-go-mod.json >/dev/null ||
+  fail "upstream go.mod contains unsupported local replacements"
+
+cp "${UPSTREAM_MOD}" go.mod
+go mod edit -module=github.com/rancher/image-build-rke2-cloud-provider
+go mod edit "-go=${BOOTSTRAP_GO}"
+go mod edit "-require=github.com/k3s-io/k3s@${VERSION}"
+while IFS= read -r replacement; do
+  [[ -n "${replacement}" ]] || continue
+  go mod edit "-replace=${replacement}"
+done < <(jq -r '
+  .Replace[] | select(.Old.Path != "github.com/k3s-io/kine") |
+  .Old.Path + (if (.Old.Version // "") == "" then "" else "@" + .Old.Version end) +
+  "=" + .New.Path + "@" + .New.Version
+' k3s-go-mod.json)
+go mod edit -dropreplace=github.com/k3s-io/kine
+go mod edit -replace=github.com/k3s-io/kine=./third_party/kine
+if command -v go-mod-replacer >/dev/null; then
+  go-mod-replacer -local ./go-mod-overrides >&2
+else
+  echo "modsync: warning: go-mod-replacer is unavailable; skipping go-mod-overrides" >&2
 fi
 
-# ensure k8s.io replacements
-while read OLDPATH NEWPATH VERSION; do
-  (set -x; go mod edit --replace="${OLDPATH}=${NEWPATH}@${VERSION}")
-done <<< $(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r '.Replace[] | select(.Old.Path | contains("k8s.io")) | .Old.Path + " " + .New.Path + " " + .New.Version')
+go mod edit -json > resolved-go-mod.json
+jq -e --arg version "${VERSION}" '
+  any(.Require[]; .Path == "github.com/k3s-io/k3s" and .Version == $version) and
+  all(.Replace[]; .Old.Path != "github.com/k3s-io/k3s") and
+  any(.Replace[];
+    .Old.Path == "github.com/k3s-io/kine" and (.Old.Version // "") == "" and
+    .New.Path == "./third_party/kine" and (.New.Version // "") == "")
+' resolved-go-mod.json >/dev/null ||
+  fail "dependency overrides changed the selected k3s source or local kine stub"
+jq -e --arg minor "${MINOR}" '
+  any(.Replace[];
+    .Old.Path == "k8s.io/kubernetes" and
+    (.New.Version | startswith($minor + ".") or startswith($minor + "-")))
+' resolved-go-mod.json >/dev/null ||
+  fail "dependency overrides changed the Kubernetes minor from ${MINOR}"
 
-# update replacements
-while read OLDPATH NEWPATH VERSION; do
-  # don't update local replacements
-  if [[ "${NEWPATH}" == ./* ]]; then
-    echo "Not updating local replacement of ${OLDPATH}"
-    continue
-  fi
-  REPLACEMENT=$(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r --arg OLDPATH "${OLDPATH}" '.Replace[] | select(.Old.Path==$OLDPATH) | .New.Version')
-  K3S_PATH=$(go mod edit --json /dev/stdin <<<${K3S_GO_MOD} | jq -r --arg OLDPATH "${OLDPATH}" '.Replace[] | select(.Old.Path==$OLDPATH) | .New.Path')
-  if [ -n "${K3S_PATH}" ]; then
-    NEWPATH="${K3S_PATH}"
-  fi
-  echo "Checking for updates to ${OLDPATH} ${VERSION} -> ${REPLACEMENT}"
-  if [ -n "${REPLACEMENT}" ] && [ "${REPLACEMENT}" != "null" ] && grep -vqF github.com/k3s-io/k3s <<<${NEWPATH} && semver-cli greater ${REPLACEMENT} ${VERSION} ; then
-    (set -x; go mod edit --replace="${OLDPATH}=${NEWPATH}@${REPLACEMENT}")
-  elif [ -z "${REPLACEMENT}" ] ; then
-    (set -x; go mod edit --dropreplace="${OLDPATH}")
-  fi
-done <<< $(go mod edit --json | jq -r '(.Replace[] | .Old.Path + " " + .New.Path + " " + .New.Version)')
-
-(set -x; go mod edit --dropreplace="github.com/k3s-io/k3s" --require="github.com/k3s-io/k3s@${TAG_OR_COMMIT}")
-
-go mod tidy
+echo "${WORKSPACE}"

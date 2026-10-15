@@ -13,36 +13,60 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 TAG ?= ${GITHUB_ACTION_TAG}
+K3S_MINOR ?=
 
 ifeq ($(TAG),)
-TAG := v1.34.12$(BUILD_META)
+ifeq ($(K3S_MINOR),)
+K3S_MINOR := 1.34
+endif
+TAG := v$(patsubst v%,%,$(K3S_MINOR))-r99$(BUILD_META)
 endif
 
-ifeq (,$(filter %$(BUILD_META),$(TAG)))
-$(error TAG $(TAG) needs to end with build metadata: $(BUILD_META))
+K3S_SOURCE := $(shell bash ./scripts/source.sh "$(TAG)")
+K3S_MINOR := $(word 1,$(K3S_SOURCE))
+K3S_COMMIT ?= $(word 2,$(K3S_SOURCE))
+ifeq ($(strip $(K3S_COMMIT)),)
+$(error Could not resolve TAG $(TAG) to a k3s source commit)
 endif
 
 REPO ?= rancher
 IMAGE ?= $(REPO)/rke2-cloud-provider:$(TAG)
 
+.PHONY: modsync
+modsync:
+	mkdir -p .cache/modsync
+	bash ./scripts/modsync.sh "$(K3S_MINOR)" "$(K3S_COMMIT)"
+
+.PHONY: clean
+clean:
+	@if [ "$$(id -u)" -ne 0 ]; then \
+		echo "clean removes generated workspaces; run 'sudo make clean'." >&2; \
+		exit 1; \
+	fi
+	rm -rf -- .cache/modsync .cache/mod-sync
+
 
 .PHONY: image-build
 image-build:
+	mkdir -p .cache/modsync
 	docker buildx build \
 		--platform=$(TARGET_PLATFORMS) \
 		--load \
 		--build-arg TAG=$(TAG) \
+		--build-arg K3S_COMMIT=$(K3S_COMMIT) \
 		--tag $(IMAGE) \
 	.
 
 .PHONY: push-image
 push-image:
+	mkdir -p .cache/modsync
 	docker buildx build \
 		$(IID_FILE_FLAG) \
 		--sbom=true \
 		--attest type=provenance,mode=max \
 		--platform=$(TARGET_PLATFORMS) \
 		--build-arg TAG=$(TAG) \
+		--build-arg K3S_COMMIT=$(K3S_COMMIT) \
 		--tag $(IMAGE) \
 		--push \
 		.
@@ -55,6 +79,8 @@ PHONY: log
 log:
 	@echo "TARGET_PLATFORMS=$(TARGET_PLATFORMS)"
 	@echo "TAG=$(TAG)"
+	@echo "K3S_MINOR=$(K3S_MINOR)"
+	@echo "K3S_COMMIT=$(K3S_COMMIT)"
 	@echo "REPO=$(REPO)"
 	@echo "IMAGE=$(IMAGE)"
 	@echo "BUILD_META=$(BUILD_META)"
