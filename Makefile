@@ -1,15 +1,6 @@
 SEVERITIES = HIGH,CRITICAL
 
 UNAME_M = $(shell uname -m)
-ARCH=
-ifeq ($(UNAME_M), x86_64)
-	ARCH=amd64
-else ifeq ($(UNAME_M), aarch64)
-	ARCH=arm64
-else 
-	ARCH=$(UNAME_M)
-endif
-
 ifndef TARGET_PLATFORMS
 	ifeq ($(UNAME_M), x86_64)
 		TARGET_PLATFORMS:=linux/amd64
@@ -38,17 +29,11 @@ IMAGE ?= $(REPO)/rke2-cloud-provider:$(TAG)
 .PHONY: image-build
 image-build:
 	docker buildx build \
-		--pull \
-		--platform=$(ARCH) \
+		--platform=$(TARGET_PLATFORMS) \
 		--load \
 		--build-arg TAG=$(TAG) \
-		--build-arg ARCH=$(ARCH) \
-		-t $(IMAGE)-$(ARCH) \
+		--tag $(IMAGE) \
 	.
-
-.PHONY: image-push
-image-push:
-	docker push $(IMAGE)-$(ARCH) >> /dev/null
 
 .PHONY: push-image
 push-image:
@@ -58,9 +43,7 @@ push-image:
 		--attest type=provenance,mode=max \
 		--platform=$(TARGET_PLATFORMS) \
 		--build-arg TAG=$(TAG) \
-		--build-arg ARCH=$(ARCH) \
 		--tag $(IMAGE) \
-		--tag $(IMAGE)-$(ARCH) \
 		--push \
 		.
 
@@ -70,11 +53,9 @@ image-scan:
 
 PHONY: log
 log:
-	@echo "ARCH=$(ARCH)"
+	@echo "TARGET_PLATFORMS=$(TARGET_PLATFORMS)"
 	@echo "TAG=$(TAG)"
 	@echo "REPO=$(REPO)"
 	@echo "IMAGE=$(IMAGE)"
-	@echo "PKG=$(PKG)"
-	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
 	@echo "UNAME_M=$(UNAME_M)"
