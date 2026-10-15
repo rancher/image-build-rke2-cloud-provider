@@ -23,7 +23,7 @@ RUN set -x && \
     xx-apk --no-cache add musl-dev gcc
 
 FROM base-builder AS builder
-ARG TAG=""
+ARG TAG
 ARG PKG="github.com/rancher/image-build-rke2-cloud-provider"
 COPY . /$GOPATH/src/${PKG}
 WORKDIR $GOPATH/src/${PKG}
