@@ -1,1 +1,2 @@
-# We should inject overrides directly into the go.mod file using the `replace` directive.
+# These are project-specific dependency overrides for Go modules. It runs after the full go.mod/go.sum has been generated 
+# from the k3s commit used for the build.
