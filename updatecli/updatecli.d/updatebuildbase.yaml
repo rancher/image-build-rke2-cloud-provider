@@ -75,26 +75,6 @@ targets:
     transformers:
       - find: 'v?\d+\.\d+\.\d+'
 
-  goModTidy:
-    dependson:
-      - goversion
-    disablesourceinput: true
-    dependsonchange: true
-    kind: shell
-    scmid: default
-    name: Run `go mod tidy`
-    spec:
-      changedif:
-        kind: file/checksum
-        spec:
-          files:
-            - go.mod
-            - go.sum
-      command: go mod tidy
-      environments:
-        - name: HOME
-        - name: PATH
-
 scms:
   default:
     kind: github
