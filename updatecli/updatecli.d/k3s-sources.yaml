@@ -1,0 +1,91 @@
+---
+name: "Update k3s source commits"
+
+sources:
+{{ range $minor := .k3sMinors }}
+  k3s-{{ $minor }}:
+    name: "Latest commit on k3s release-{{ trimPrefix "v" $minor }}"
+    kind: gitcommit
+    spec:
+      url: https://github.com/k3s-io/k3s.git
+      branch: release-{{ trimPrefix "v" $minor }}
+      depth: 1
+  revision-{{ $minor }}:
+    name: "Next {{ $minor }} image revision"
+    kind: json
+    spec:
+      file: k3s-sources.json
+      engine: dasel/v3
+      key: 'get("{{ $minor }}").revision'
+    transformers:
+      - trimprefix: "r"
+      - addprefix: "0.0."
+      - semverinc: patch
+      - findsubmatch:
+          pattern: '^0\.0\.([0-9]+)$'
+          captureindex: 1
+      - addprefix: "r"
+{{ end }}
+
+conditions:
+{{ range $minor := .k3sMinors }}
+  k3s-{{ $minor }}-commit:
+    name: "Check whether {{ $minor }} source commit changed"
+    kind: json
+    sourceid: k3s-{{ $minor }}
+    failwhen: true
+    spec:
+      file: k3s-sources.json
+      engine: dasel/v3
+      key: 'get("{{ $minor }}").commit'
+{{ end }}
+
+targets:
+{{ range $minor := .k3sMinors }}
+  commit-{{ $minor }}:
+    name: "Update {{ $minor }} source commit"
+    kind: json
+    scmid: default
+    sourceid: k3s-{{ $minor }}
+    dependson:
+      - condition#k3s-{{ $minor }}-commit
+    spec:
+      file: k3s-sources.json
+      engine: dasel/v3
+      key: 'get("{{ $minor }}").commit'
+  revision-{{ $minor }}:
+    name: "Bump {{ $minor }} image revision"
+    kind: json
+    scmid: default
+    sourceid: revision-{{ $minor }}
+    dependson:
+      - condition#k3s-{{ $minor }}-commit
+    spec:
+      file: k3s-sources.json
+      engine: dasel/v3
+      key: 'get("{{ $minor }}").revision'
+{{ end }}
+
+scms:
+  default:
+    kind: github
+    spec:
+      token: '{{ requiredEnv .github.token }}'
+      username: '{{ requiredEnv .github.username }}'
+      user: '{{ .github.user }}'
+      email: '{{ .github.email }}'
+      owner: '{{ .github.owner }}'
+      repository: '{{ .github.repository }}'
+      branch: '{{ .github.branch }}'
+
+actions:
+  default:
+    title: "Update k3s source commits"
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      merge:
+        strategy: manual
+      labels:
+        - updatecli
+        - status/auto-created
