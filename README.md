@@ -26,7 +26,11 @@ The command produces a generated workspace path under `.cache/modsync/`. Run Go 
 
 ### Updating k3s sources
 
-Whenever a source commit changes, increment the minor's `revision` and replace its `commit` together; never reuse an image tag for a different k3s commit. For dependency, toolchain, or packaging-only releases, increment the revision while retaining the SHA. Previous revision pins are replaced; build historical releases from their corresponding Git tags.
+Whenever a source commit changes, increment the minor's `revision` and replace its `commit` together; never reuse an image tag for a different k3s commit. For dependency, toolchain, or packaging-only releases, increment the revision while retaining the SHA. 
+
+An UpdateCLI workflow runs weekly and updates k3s sources to the latest commit in each `release-<MINOR>` branch automatically.
+
+New minors require new entires in `k3s-sources.json` and in the UpdateCLI `values.yaml`.
 
 ## Build (Legacy)
 

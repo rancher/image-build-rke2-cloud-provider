@@ -6,3 +6,5 @@ github:
   repository: "image-build-rke2-cloud-provider"
   branch: "main"
   owner: "rancher"
+
+k3sMinors: ["v1.34", "v1.35", "v1.36", "v1.37"]
