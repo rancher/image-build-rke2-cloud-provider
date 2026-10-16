@@ -1,4 +1,4 @@
-name: "Updatecli: Dependency Management"
+name: "Updatecli: Base Image"
 
 on:
   schedule:
@@ -8,13 +8,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   updatecli:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+      pull-requests: write
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
@@ -24,6 +27,20 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 'stable'
+
+      - name: Load Secrets from Vault
+        uses: rancher-eio/read-vault-secrets@dfae8acd43a9e170fca5f90168da22f814fe4e9a # main
+        with:
+          secrets: |
+            secret/data/github/org/${{ github.repository_owner }}/github/renovate-rancher appId | APP_ID ;
+            secret/data/github/org/${{ github.repository_owner }}/github/renovate-rancher privateKey | PRIVATE_KEY
+
+      - name: Generate App Token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ env.APP_ID }}
+          private-key: ${{ env.PRIVATE_KEY }}
 
       - name: Install Updatecli
         uses: updatecli/updatecli-action@2efa15cbae1751f532f9bfc88f56adafd6d1faed # v3.8.0
@@ -49,7 +66,7 @@ jobs:
 
       - name: Apply Updatecli
         # Never use '--debug' option, because it might leak the access tokens.
-        run: "updatecli apply --clean --config ./updatecli/updatecli.d/ --values ./updatecli/values.yaml"
+        run: "updatecli pipeline apply --clean --config ./updatecli/updatecli.d/updatebuildbase.yml --values ./updatecli/values.yaml"
         env:
-          UPDATECLI_GITHUB_ACTOR: ${{ github.actor }}
-          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_GITHUB_ACTOR: "renovate-rancher[bot]"
+          UPDATECLI_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
