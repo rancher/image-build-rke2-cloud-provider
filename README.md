@@ -28,6 +28,9 @@ The command produces a generated workspace path under `.cache/modsync/`. Run Go 
 
 Update the entry for a minor in `k3s-sources.json` to a full, immutable 40-character k3s commit SHA. When adding a new supported minor, update both `k3s-sources.json` and the `k3s_minor` matrices in `.github/workflows/build.yml`. 
 
+An UpdateCLI workflow runs weekly and updates k3s sources to the 
+latest commit in each `release-<MINOR>` branch automatically.
+
 ## Build (Legacy)
 
 Legacy releases used `v1.MINOR.PATCH-buildYYYYMMDD` to select the matching k3s `v1.MINOR.PATCH+k3s1` tag, or embedded a Go pseudo-version, e.g. `v1.35.9-0.20260915234130-a341ba01f9eb-build20260916`, with the build used that to select k3s source and synchronize dependencies.
