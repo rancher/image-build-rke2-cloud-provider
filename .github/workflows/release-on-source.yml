@@ -1,0 +1,153 @@
+name: Release On Source Update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - k3s-sources.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-on-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Calculate release tags for changed source revisions
+        id: validate
+        env:
+          BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAGS_FILE="${RUNNER_TEMP}/release-tags"
+          PREVIOUS_MANIFEST="${RUNNER_TEMP}/k3s-sources-before.json"
+          : > "${RELEASE_TAGS_FILE}"
+
+          if [[ "${BEFORE}" =~ ^0+$ ]]; then
+            echo "Push has no previous commit; skipping release"
+          elif [[ "$(git diff --name-only "${BEFORE}" "${GITHUB_SHA}")" != "k3s-sources.json" ]]; then
+            echo "Push changed files other than k3s-sources.json; skipping release"
+          else
+            git show "${BEFORE}:k3s-sources.json" > "${PREVIOUS_MANIFEST}"
+            jq -e '
+              type == "object" and length > 0 and
+              all(to_entries[];
+                (.key | test("^v1\\.[0-9]+$")) and
+                (.value | type == "object" and (keys | sort) == ["commit", "revision"] and
+                  (.revision | type == "string" and test("^r[1-9][0-9]*$")) and
+                  (.commit | type == "string" and test("^[0-9a-f]{40}$"))))
+            ' k3s-sources.json >/dev/null
+
+            CHANGED_MINORS=$(jq -nr \
+              --slurpfile before "${PREVIOUS_MANIFEST}" \
+              --slurpfile after k3s-sources.json '
+                ($before[0]) as $old
+                | ($after[0]) as $new
+                | (($old | keys) + ($new | keys) | unique[]) as $minor
+                | select($old[$minor] != $new[$minor])
+                | $minor
+              ')
+            EXISTING_RELEASES=$(gh release list --limit 1000 --json tagName --jq '.[].tagName')
+            BUILD_DATE=$(git show -s --format=%cd --date=format:%Y%m%d "${GITHUB_SHA}")
+
+            while IFS= read -r minor; do
+              [[ -n "${minor}" ]] || continue
+              if ! jq -e --arg minor "${minor}" 'has($minor)' k3s-sources.json >/dev/null; then
+                echo "${minor} was removed from k3s-sources.json; no release created"
+                continue
+              fi
+
+              REVISION=$(jq -er --arg minor "${minor}" '.[$minor].revision' k3s-sources.json)
+              COMMIT=$(jq -er --arg minor "${minor}" '.[$minor].commit' k3s-sources.json)
+              PREVIOUS_REVISION=$(jq -r --arg minor "${minor}" '.[$minor].revision // ""' "${PREVIOUS_MANIFEST}")
+              PREVIOUS_COMMIT=$(jq -r --arg minor "${minor}" '.[$minor].commit // ""' "${PREVIOUS_MANIFEST}")
+
+              if [[ -n "${PREVIOUS_REVISION}" ]]; then
+                if [[ "${COMMIT}" != "${PREVIOUS_COMMIT}" && "${REVISION}" == "${PREVIOUS_REVISION}" ]]; then
+                  echo "${minor} changed k3s commit without incrementing its revision" >&2
+                  exit 1
+                fi
+                if [[ "${REVISION}" != "${PREVIOUS_REVISION}" ]]; then
+                  PREVIOUS_REVISION_NUMBER="${PREVIOUS_REVISION#r}"
+                  REVISION_NUMBER="${REVISION#r}"
+                  if (( 10#${REVISION_NUMBER} <= 10#${PREVIOUS_REVISION_NUMBER} )); then
+                    echo "${minor} revision ${REVISION} must be greater than ${PREVIOUS_REVISION}" >&2
+                    exit 1
+                  fi
+                fi
+              fi
+
+              RELEASE_PREFIX="${minor}-${REVISION}-build"
+              REVISION_RELEASE_EXISTS=false
+              while IFS= read -r existing_release; do
+                if [[ "${existing_release}" == "${RELEASE_PREFIX}"* ]]; then
+                  existing_date="${existing_release#"$RELEASE_PREFIX"}"
+                  if [[ "${existing_date}" =~ ^[0-9]{8}$ ]]; then
+                    REVISION_RELEASE_EXISTS=true
+                    break
+                  fi
+                fi
+              done <<< "${EXISTING_RELEASES}"
+
+              if [[ "${REVISION_RELEASE_EXISTS}" == true ]]; then
+                echo "A release already exists for ${minor}-${REVISION}; skipping"
+                continue
+              fi
+
+              printf '%s\n' "${RELEASE_PREFIX}${BUILD_DATE}" >> "${RELEASE_TAGS_FILE}"
+            done <<< "${CHANGED_MINORS}"
+          fi
+
+          if [[ -s "${RELEASE_TAGS_FILE}" ]]; then
+            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "should_release=false" >> "${GITHUB_OUTPUT}"
+          fi
+          {
+            echo "release_tags<<EOF"
+            cat "${RELEASE_TAGS_FILE}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Read app secrets
+        if: steps.validate.outputs.should_release == 'true'
+        uses: rancher-eio/read-vault-secrets@dfae8acd43a9e170fca5f90168da22f814fe4e9a # main
+        with:
+          secrets: |
+            secret/data/github/repo/${{ github.repository }}/github/rancher-release-team-auto-tagger/app-credentials appId | APP_ID ;
+            secret/data/github/repo/${{ github.repository }}/github/rancher-release-team-auto-tagger/app-credentials privateKey | PRIVATE_KEY
+
+      - name: Generate GitHub App token
+        if: steps.validate.outputs.should_release == 'true'
+        id: generate-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ env.APP_ID }}
+          private-key: ${{ env.PRIVATE_KEY }}
+
+      - name: Create GitHub releases
+        if: steps.validate.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          RELEASE_TAGS: ${{ steps.validate.outputs.release_tags }}
+        run: |
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+            gh release create "${tag}" \
+              --target "${GITHUB_SHA}" \
+              --title "${tag}" \
+              --generate-notes
+          done <<< "${RELEASE_TAGS}"
