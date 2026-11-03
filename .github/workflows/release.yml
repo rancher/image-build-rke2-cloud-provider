@@ -39,7 +39,7 @@ jobs:
         df -khl
 
     - name: "Read secrets"
-      uses: rancher-eio/read-vault-secrets@dfae8acd43a9e170fca5f90168da22f814fe4e9a # main
+      uses: rancher-eio/read-vault-secrets@4c8f4e741954651c502bb7739c46ae1bad26b44d # main
       with:
         secrets: |
           secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
@@ -52,7 +52,7 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
 
     - name: Build and push container image - Staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@aa63973420722265b20b4b2dd71c8a737d7494e1 # v0.78.1
       with:
         image: rke2-cloud-provider
         tag: ${{ github.event.release.tag_name }}
@@ -64,7 +64,7 @@ jobs:
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
 
     - name: Build and push container image
-      uses: rancher/ecm-distro-tools/actions/publish-image@086cd2f90ed82712e45701441a00e59b95b578c1 # v0.77.1
+      uses: rancher/ecm-distro-tools/actions/publish-image@aa63973420722265b20b4b2dd71c8a737d7494e1 # v0.78.1
       with:
         image: rke2-cloud-provider
         tag: ${{ github.event.release.tag_name }}
